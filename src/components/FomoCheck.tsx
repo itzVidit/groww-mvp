@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { fomoScore, SIGNALS, TRENDING, type FomoLevel, type FomoSignal } from '../lib/fomo'
+import { fomoScore, FOMO_AMOUNTS, goalImpact, SIGNALS, TRENDING, type FomoLevel, type FomoSignal, type TrendingAsset } from '../lib/fomo'
+import { inr } from '../lib/format'
 import { useApp, useDerived } from '../state/store'
 import { Button, Disclaimer, Sheet } from './ui'
 import { CheckIcon } from './Icons'
@@ -12,15 +13,18 @@ const LEVEL_STYLE: Record<FomoLevel, { text: string; bg: string; bar: string }> 
   LOW: { text: 'text-mint-dark', bg: 'bg-mint-soft', bar: '#00B386' },
 }
 
-export function FomoCheck({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function FomoCheck({ asset, onClose }: { asset: TrendingAsset | null; onClose: () => void }) {
+  const open = !!asset
   const { dispatch } = useApp()
   const { user, goal } = useDerived()
   const [stage, setStage] = useState<Stage>('ask')
   const [signals, setSignals] = useState<FomoSignal[]>([])
-  const result = useMemo(() => fomoScore(signals, TRENDING, user), [signals, user])
-  const a = TRENDING
+  const [amount, setAmount] = useState<number>(2500)
+  const a = asset ?? TRENDING
+  const result = useMemo(() => fomoScore(signals, a, user), [signals, a, user])
+  const impact = useMemo(() => goalImpact(amount, user), [amount, user])
 
-  const close = () => { onClose(); setTimeout(() => { setStage('ask'); setSignals([]) }, 300) }
+  const close = () => { onClose(); setTimeout(() => { setStage('ask'); setSignals([]); setAmount(2500) }, 300) }
   const toggle = (s: FomoSignal) => setSignals((xs) => (xs.includes(s) ? xs.filter((x) => x !== s) : [...xs, s]))
   const pause = () => {
     dispatch({ type: 'REWARD_ONCE', key: 'fomo-pause', xp: 40, label: 'Avoided an impulse decision' })
@@ -32,7 +36,7 @@ export function FomoCheck({ open, onClose }: { open: boolean; onClose: () => voi
     <Sheet open={open} onClose={close} tall>
       {/* Asset strip */}
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-coral-soft grid place-items-center text-xl">⚡</div>
+        <div className="w-11 h-11 rounded-2xl bg-coral-soft grid place-items-center text-xl">{a.emoji}</div>
         <div className="flex-1">
           <div className="font-semibold">{a.name} <span className="text-[11px] font-medium text-ink-3">· hypothetical</span></div>
           <div className="text-[12px] text-ink-3">{a.mentions}</div>
@@ -46,7 +50,7 @@ export function FomoCheck({ open, onClose }: { open: boolean; onClose: () => voi
       <div key={stage} className="animate-rise">
         {stage === 'ask' && (
           <>
-            <div className="mt-6 label">FOMO Check · 20 seconds</div>
+            <div className="mt-6 label">FOMO Shield · 20 seconds</div>
             <h3 className="font-display text-[24px] leading-tight font-semibold mt-2">What made you want to buy {a.name}?</h3>
             <p className="text-ink-3 text-sm mt-1">Pick all that are true. Honest answers only work for you.</p>
             <div className="mt-4 space-y-2">
@@ -63,6 +67,16 @@ export function FomoCheck({ open, onClose }: { open: boolean; onClose: () => voi
                 )
               })}
             </div>
+            <div className="mt-5 label">How much would you put in?</div>
+            <div className="mt-2 flex gap-2">
+              {FOMO_AMOUNTS.map((v) => (
+                <button key={v} onClick={() => setAmount(v)}
+                  aria-pressed={amount === v} className={`tap flex-1 h-10 rounded-xl text-[14px] font-semibold border-2 transition num ${amount === v ? 'border-ink bg-paper-card' : 'border-paper-line bg-paper-card/60 text-ink-2'}`}>
+                  {inr(v)}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[13px] text-ink-3">{impact.text}</p>
             <Button variant="dark" className="w-full h-14 mt-5" onClick={() => setStage('result')}>Check my FOMO</Button>
           </>
         )}
@@ -73,6 +87,10 @@ export function FomoCheck({ open, onClose }: { open: boolean; onClose: () => voi
               <div className="label !text-ink-2">FOMO Risk</div>
               <div className={`font-display text-[40px] font-bold leading-none mt-1 ${st.text}`}>{result.level}</div>
               <Meter score={result.score} color={st.bar} />
+            </div>
+            <div className="mt-4 rounded-2xl bg-paper-card border border-paper-line px-4 py-3 text-[14px]">
+              <b className="num">{impact.text}</b>
+              <span className="text-ink-3"> · money that isn't going to your goal</span>
             </div>
             <div className="mt-5 label">Why</div>
             <ul className="mt-2 space-y-2">
@@ -104,7 +122,7 @@ export function FomoCheck({ open, onClose }: { open: boolean; onClose: () => voi
             <div className="grid grid-cols-3 gap-2 mt-4">
               <Stat k="7-day move" v={`+${a.change7d}%`} />
               <Stat k="Volatility" v={a.volatility} />
-              <Stat k="Profitable?" v="Not yet" />
+              <Stat k="Profitable?" v={a.profitable} />
             </div>
             <div className="card p-4 mt-4">
               <div className="label">Ask yourself</div>

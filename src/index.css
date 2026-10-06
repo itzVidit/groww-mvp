@@ -8,6 +8,9 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid #008F6B; outline-offset: 2px; border-radius: 8px; }
+/* Comfortable thumb targets on touch screens. */
+@media (pointer: coarse) { .tap { min-height: 44px; } }
 .card { @apply bg-paper-card rounded-3xl shadow-card border border-paper-line/70; }
 .label { @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3; }
 .no-scrollbar::-webkit-scrollbar { display: none; }

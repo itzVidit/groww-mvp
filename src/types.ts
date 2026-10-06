@@ -33,6 +33,8 @@ export interface User {
   activeGoalId: string
   /** Simulated clock: monthly moves made so far (keeps "ready by" dates fixed). */
   monthsElapsed?: number
+  /** An EMI the user chose in "Can I afford it?". Counts down with each monthly move. */
+  emi?: { item: string; monthly: number; monthsLeft: number }
 }
 
 export interface Investment {

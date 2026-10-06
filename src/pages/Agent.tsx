@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useApp, useDerived } from '../state/store'
+import { useHost } from '../integration/host'
+import { useLayout } from '../lib/layout'
 import { agentFollowUp, agentReply, SUGGESTED_PROMPTS, type AgentAction, type AgentContext, type AgentMessage } from '../lib/agent'
-import { goalFromTemplate, templateFor } from '../data/demo'
+import { goalForItem } from '../data/demo'
+import { AffordSheet, type AffordSeed } from '../components/AffordIt'
 import { inr } from '../lib/format'
 import { LessonSheet } from '../components/MoneyMinute'
 import { PageHeader } from '../components/ui'
@@ -14,11 +17,15 @@ export default function Agent() {
   const { state, dispatch } = useApp()
   const { user, goal, health } = useDerived()
   const nav = useNavigate()
+  const { web } = useLayout()
+  const host = useHost()
+  const px = web ? "px-0" : "px-4"
   const [params] = useSearchParams()
   const [input, setInput] = useState('')
   const [typing, setTyping] = useState(false)
   const [used, setUsed] = useState<Set<string>>(new Set())
   const [lesson, setLesson] = useState<string | null>(null)
+  const [afford, setAfford] = useState<AffordSeed | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const autoSent = useRef(false)
 
@@ -59,17 +66,20 @@ export default function Agent() {
       case 'open_fomo': return nav('/invest?fomo=1')
       case 'open_health': return nav('/money')
       case 'open_goal': return goal && nav(`/goals/${goal.id}`)
+      case 'open_returns': return nav('/invest?returns=1')
+      case 'open_afford': return setAfford({ item: String(a.payload?.item ?? 'iPhone'), price: Number(a.payload?.price ?? 79900) })
       case 'open_lesson': return setLesson(String(a.payload?.lesson ?? 'sip'))
       case 'ask': return send(String(a.payload?.prompt ?? ''))
     }
     setMessages((xs) => [...xs, { id: 'u' + Date.now(), role: 'user', text: a.label }])
-    if (a.id === 'apply_split') dispatch({ type: 'ADD_TO_GOAL', amount: Number(a.payload?.toGoal ?? 0), label: 'Put extra money to work' })
-    if (a.id === 'keep_plan') dispatch({ type: 'REWARD_ONCE', key: 'keep-plan', xp: 40, label: 'Stayed on plan, skipped an impulse EMI' })
-    if (a.id === 'add_goal') {
-      const item = String(a.payload?.item)
-      const t = templateFor(item === 'iPhone' ? 'iphone' : item === 'bike' ? 'bike' : 'custom')
-      dispatch({ type: 'ADD_GOAL', goal: goalFromTemplate(t, { name: item === 'this' ? 'Next purchase' : item.replace(/^\w/, (c) => c.toUpperCase()), targetAmount: Number(a.payload?.price) }) })
+    if (a.id === 'apply_split') {
+      // Monthly questions apply Home's exact move; one-off amounts land in the goal and buffer.
+      if (a.payload?.monthly) dispatch({ type: 'MAKE_MOVE' })
+      else dispatch({ type: 'APPLY_SPLIT', toGoal: Number(a.payload?.toGoal ?? 0), toBuffer: Number(a.payload?.toBuffer ?? 0), label: 'Put extra money to work' })
+      host.trackEvent('dreams_agent_split_applied', { amount: Number(a.payload?.amount ?? 0), goal: Number(a.payload?.toGoal ?? 0), buffer: Number(a.payload?.toBuffer ?? 0) })
     }
+    if (a.id === 'keep_plan') dispatch({ type: 'REWARD_ONCE', key: 'keep-plan', xp: 40, label: 'Stayed on plan, skipped an impulse EMI' })
+    if (a.id === 'add_goal') dispatch({ type: 'ADD_GOAL', goal: goalForItem(String(a.payload?.item), Number(a.payload?.price)) })
     agentSays(agentFollowUp(a, ctx))
   }
 
@@ -88,14 +98,17 @@ export default function Agent() {
         }
       />
 
-      <div className="flex-1 px-4 pb-4 space-y-3">
+      <div className={web ? "flex-1 grid lg:grid-cols-[280px_minmax(0,1fr)] gap-8 items-start" : "flex flex-col flex-1"}>
+      {web && <AgentSide send={send} goalName={goal?.name} health={health.total} monthly={user.monthlyAvailable} />}
+      <div className="flex flex-col flex-1 min-w-0 self-stretch">
+      <div className={`flex-1 ${px} pb-4 space-y-3`}>
         {messages.map((m) => (m.role === 'user' ? (
           <div key={m.id} className="flex justify-end animate-rise">
-            <div className="max-w-[80%] rounded-[20px] rounded-br-md bg-ink text-white px-4 py-2.5 text-[15px]">{m.text}</div>
+            <div className={`${web ? "max-w-[70%]" : "max-w-[80%]"} rounded-[20px] rounded-br-md bg-ink text-white px-4 py-2.5 text-[15px]`}>{m.text}</div>
           </div>
         ) : (
           <div key={m.id} className="flex animate-rise">
-            <div className="max-w-[90%] rounded-[20px] rounded-bl-md bg-paper-card border border-paper-line shadow-card px-4 py-3">
+            <div className={`${web ? "max-w-[85%]" : "max-w-[90%]"} rounded-[20px] rounded-bl-md bg-paper-card border border-paper-line shadow-card px-4 py-3`}>
               <p className="text-[15px] leading-relaxed whitespace-pre-line">{m.text}</p>
               {m.lines && (
                 <div className="mt-3 rounded-2xl bg-paper p-3 space-y-2">
@@ -110,13 +123,14 @@ export default function Agent() {
                 </div>
               )}
               {m.note && <p className="text-[13px] text-ink-3 mt-3 leading-snug">{m.note}</p>}
+              {m.basis && m.basis.length > 0 && <p className="text-[11.5px] text-ink-3 mt-2 leading-snug">Based on: {m.basis.join(' · ')}</p>}
               {m.actions && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {m.actions.map((a) => {
                     const done = used.has(m.id + a.label)
                     return (
                       <button key={a.id + a.label} onClick={() => onAction(m.id, a)} disabled={done}
-                        className={`h-9 px-3.5 rounded-full text-[13px] font-semibold transition disabled:opacity-40 ${a.primary ? 'bg-mint text-white hover:bg-mint-dark' : 'bg-ink/[0.06] hover:bg-ink/10'}`}>
+                        className={`tap h-9 px-3.5 rounded-full text-[13px] font-semibold transition disabled:opacity-40 ${a.primary ? 'bg-mint text-white hover:bg-mint-dark' : 'bg-ink/[0.06] hover:bg-ink/10'}`}>
                         {a.label}
                       </button>
                     )
@@ -137,15 +151,15 @@ export default function Agent() {
       </div>
 
       {/* Composer */}
-      <div className="sticky bottom-0 bg-paper border-t border-paper-line pt-2.5 pb-safe">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar px-4 pb-2.5">
+      <div className={`sticky bottom-0 bg-paper pt-2.5 ${web ? "pb-4" : "border-t border-paper-line pb-safe"}`}>
+        <div className={`flex gap-2 overflow-x-auto no-scrollbar ${px} pb-2.5 ${web ? "lg:hidden" : ""}`}>
           {SUGGESTED_PROMPTS.map((p) => (
-            <button key={p} onClick={() => send(p)} className="shrink-0 h-8 px-3 rounded-full bg-paper-card border border-paper-line text-[12.5px] font-medium text-ink-2 hover:border-ink/20">
+            <button key={p} onClick={() => send(p)} className="tap shrink-0 h-8 px-3 rounded-full bg-paper-card border border-paper-line text-[12.5px] font-medium text-ink-2 hover:border-ink/20">
               {p}
             </button>
           ))}
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); send(input) }} className="px-4 flex gap-2">
+        <form onSubmit={(e) => { e.preventDefault(); send(input) }} className={`${px} flex gap-2`}>
           <input
             value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about your money…"
             className="flex-1 h-12 rounded-2xl bg-paper-card border border-paper-line px-4 text-[15px] outline-none focus:border-ink/30"
@@ -157,7 +171,37 @@ export default function Agent() {
         <p className="text-[10.5px] text-ink-3 text-center mt-2">Rule-based demo coach. Not investment advice.</p>
       </div>
 
+      </div>
+      </div>
+
       <LessonSheet lessonId={lesson} onClose={() => setLesson(null)} />
+      {afford && <AffordSheet key={afford.item + afford.price} open seed={afford} onClose={() => setAfford(null)} />}
     </div>
+  )
+}
+
+/** Web-only left rail: who the agent is, what it knows, and one-click prompts. */
+function AgentSide({ send, goalName, health, monthly }: { send: (t: string) => void; goalName?: string; health: number; monthly: number }) {
+  return (
+    <aside className="hidden lg:block lg:sticky lg:top-0 space-y-4">
+      <div className="card p-5">
+        <div className="label">What I know</div>
+        <dl className="mt-3 space-y-2.5 text-[14px]">
+          <div className="flex justify-between"><dt className="text-ink-3">Focus goal</dt><dd className="font-semibold">{goalName ?? 'None yet'}</dd></div>
+          <div className="flex justify-between"><dt className="text-ink-3">Free money</dt><dd className="font-semibold num">{inr(monthly)}/mo</dd></div>
+          <div className="flex justify-between"><dt className="text-ink-3">Money Health</dt><dd className="font-semibold num">{health}</dd></div>
+        </dl>
+      </div>
+      <div>
+        <div className="label mb-2.5">Try asking</div>
+        <div className="flex flex-col gap-2">
+          {SUGGESTED_PROMPTS.map((p) => (
+            <button key={p} onClick={() => send(p)} className="text-left text-[13.5px] font-medium text-ink-2 rounded-2xl bg-paper-card border border-paper-line px-3.5 py-2.5 hover:border-ink/25 hover:shadow-card transition">
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+    </aside>
   )
 }

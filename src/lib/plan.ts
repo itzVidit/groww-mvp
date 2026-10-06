@@ -88,6 +88,8 @@ export interface MonthlyMove {
   toBuffer: number
   toInvest: number
   flexible: number
+  /** Monthly EMI the user took on, if any. It comes out of flexible money first. */
+  emi: number
   total: number
 }
 
@@ -101,6 +103,14 @@ export function monthlyMove(user: User): MonthlyMove {
   let toInvest = plan ? plan.toInvest : Math.min(user.monthlyInvestment, A)
   let flexible = plan ? plan.flexible : Math.max(0, A - toInvest)
   let toBuffer = 0
+  // An EMI is a fixed cost: flexible money pays it first, then investing, then the goal.
+  const emi = user.emi ? Math.min(user.emi.monthly, A) : 0
+  if (emi > 0) {
+    let left = emi
+    const fromFlex = Math.min(flexible, left); flexible -= fromFlex; left -= fromFlex
+    const fromInvest = Math.min(toInvest, left); toInvest -= fromInvest; left -= fromInvest
+    toGoal = Math.max(0, toGoal - left)
+  }
   if (buffer) {
     // Buffer money comes out of flexible spending first, then investing.
     toBuffer = Math.min(buffer.monthlyContribution, buffer.targetAmount - buffer.currentAmount)
@@ -111,5 +121,56 @@ export function monthlyMove(user: User): MonthlyMove {
     toInvest -= fromInvest
     toGoal = Math.max(0, toGoal - (rest - fromInvest))
   }
-  return { toGoal, toBuffer, toInvest, flexible, total: toGoal + toBuffer + toInvest + flexible }
+  return { toGoal, toBuffer, toInvest, flexible, emi, total: toGoal + toBuffer + toInvest + flexible + emi }
+}
+
+export interface WhatIf {
+  toGoal: number
+  months: number
+  date: string
+  toInvest: number
+  flexible: number
+  investCut: number
+  shortfall: number
+}
+
+/** "What if I save this much a month?": the date, and what it does to investing and fun money. */
+export function whatIf(goal: Goal, user: User, monthlyToGoal: number): WhatIf {
+  const remaining = remainingFor(goal)
+  const A = user.monthlyAvailable
+  const I = user.monthlyInvestment
+  const toGoal = Math.max(0, Math.round(monthlyToGoal))
+  const months = remaining === 0 ? 0 : toGoal > 0 ? Math.ceil(remaining / toGoal) : 0
+  const toInvest = Math.min(I, Math.max(0, A - toGoal))
+  return {
+    toGoal, months, date: monthLabel(months + (user.monthsElapsed ?? 0)),
+    toInvest, flexible: Math.max(0, A - toGoal - toInvest),
+    investCut: Math.max(0, I - toInvest), shortfall: Math.max(0, toGoal - A),
+  }
+}
+
+export interface UpcomingMove {
+  label: string
+  toGoal: number
+  toInvest: number
+  /** Goal balance once this move lands, and how far along that is. */
+  balance: number
+  pct: number
+}
+
+/** The next few monthly moves (on the 1st), assuming the locked plan keeps running. */
+export function upcomingMoves(user: User, movedThisMonth: boolean, count = 3): UpcomingMove[] {
+  const goal = user.goals.find((g) => g.id === user.activeGoalId)
+  if (!goal || !goal.plan) return []
+  const move = monthlyMove(user)
+  const out: UpcomingMove[] = []
+  for (let k = 1; k <= count; k++) {
+    const n = movedThisMonth ? k : k + 1
+    const balance = Math.min(goal.targetAmount, goal.currentAmount + move.toGoal * n)
+    out.push({
+      label: monthLabel(k), toGoal: Math.max(0, balance - Math.min(goal.targetAmount, goal.currentAmount + move.toGoal * (n - 1))),
+      toInvest: move.toInvest, balance, pct: Math.round((balance / goal.targetAmount) * 100),
+    })
+  }
+  return out
 }

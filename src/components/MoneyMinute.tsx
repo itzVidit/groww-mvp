@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLayout } from '../lib/layout'
 import { LESSONS, type Lesson, type LessonVisual } from '../data/lessons'
 import { useApp } from '../state/store'
 import { Button, Sheet } from './ui'
@@ -6,7 +7,7 @@ import { CheckIcon } from './Icons'
 
 export function MoneyMinuteCard({ lesson, done, onOpen }: { lesson: Lesson; done: boolean; onOpen: () => void }) {
   return (
-    <button onClick={onOpen} className="shrink-0 w-[150px] h-[176px] snap-start text-left rounded-3xl p-4 bg-paper-card border border-paper-line shadow-card flex flex-col hover:-translate-y-0.5 transition">
+    <button onClick={onOpen} className="shrink-0 w-[150px] h-[176px] [.web-grid_&]:w-full snap-start text-left rounded-3xl p-4 bg-paper-card border border-paper-line shadow-card flex flex-col hover:-translate-y-0.5 transition">
       <div className="flex items-center justify-between">
         <span className="text-[26px] leading-none">{lesson.emoji}</span>
         {done ? (
@@ -22,11 +23,12 @@ export function MoneyMinuteCard({ lesson, done, onOpen }: { lesson: Lesson; done
 }
 
 export function MoneyMinuteRow() {
+  const { web } = useLayout()
   const { state } = useApp()
   const [open, setOpen] = useState<string | null>(null)
   return (
     <>
-      <div className="-mx-5 px-5 flex gap-3 overflow-x-auto no-scrollbar snap-x pb-1">
+      <div className={web ? "web-grid grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3" : "-mx-5 px-5 flex gap-3 overflow-x-auto no-scrollbar snap-x pb-1"}>
         {LESSONS.map((l) => (
           <MoneyMinuteCard key={l.id} lesson={l} done={state.completedLessons.includes(l.id)} onOpen={() => setOpen(l.id)} />
         ))}
@@ -160,9 +162,9 @@ function LessonViz({ kind }: { kind: LessonVisual }) {
   }
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
-      <path d={`M14,${H - 40} L${W - 14},${H - 72}`} stroke="#6E5BEF" strokeWidth="3" strokeLinecap="round" />
+      <path d={`M14,${H - 40} L${W - 14},${H - 72}`} stroke="#5367FF" strokeWidth="3" strokeLinecap="round" />
       <path d={`M14,${H - 40} C80,${H - 110} 120,${H - 10} 170,${H - 80} S250,${H - 30} ${W - 14},${H - 100}`} stroke="#B4BCC8" strokeWidth="2" fill="none" strokeDasharray="4 5" />
-      <text x={W - 14} y={H - 60} textAnchor="end" fontSize="10" fill="#6E5BEF" fontWeight="700">FD: steady</text>
+      <text x={W - 14} y={H - 60} textAnchor="end" fontSize="10" fill="#5367FF" fontWeight="700">FD: steady</text>
       <text x={W - 14} y={H - 108} textAnchor="end" fontSize="10" fill="#7A8494">Stocks: bumpy</text>
       <text x={10} y={14} fontSize="10" fill="#3A4250" fontWeight="600">Predictable vs. unpredictable</text>
     </svg>

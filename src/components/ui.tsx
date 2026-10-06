@@ -1,7 +1,8 @@
-import { useEffect, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { BackIcon, CloseIcon } from './Icons'
+import { useLayout } from '../lib/layout'
 
 /* ------------------------------ Button ------------------------------ */
 type Variant = 'primary' | 'dark' | 'ghost' | 'soft'
@@ -38,7 +39,7 @@ export function ProgressBar({ value, tone = 'mint', height = 8, className = '' }
 
 /* ---------------------------- SplitBar ------------------------------ */
 export const SPLIT_COLORS = {
-  goal: 'bg-mint', invest: 'bg-violet', buffer: 'bg-amber', flex: 'bg-ink/15', warn: 'bg-coral',
+  goal: 'bg-mint', invest: 'bg-violet', buffer: 'bg-amber', flex: 'bg-ink/15', warn: 'bg-coral', essential: 'bg-ink/40',
 } as const
 export function SplitBar({ parts, height = 10 }: { parts: { value: number; tone: keyof typeof SPLIT_COLORS }[]; height?: number }) {
   const total = parts.reduce((s, p) => s + p.value, 0) || 1
@@ -55,20 +56,51 @@ export function SplitBar({ parts, height = 10 }: { parts: { value: number; tone:
 export function Sheet({ open, onClose, children, title, tall = false }: {
   open: boolean; onClose: () => void; children: ReactNode; title?: ReactNode; tall?: boolean
 }) {
+  const { web } = useLayout()
+  const panel = useRef<HTMLDivElement>(null)
+  // Keep the latest onClose without re-running the focus effect on every parent render.
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const before = document.activeElement as HTMLElement | null
+    panel.current?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') return closeRef.current()
+      if (e.key !== 'Tab' || !panel.current) return
+      // Trap focus inside the sheet.
+      const items = panel.current.querySelectorAll<HTMLElement>('button:not([disabled]), input, [href], [tabindex]:not([tabindex="-1"]), summary')
+      if (items.length === 0) return
+      const first = items[0], last = items[items.length - 1]
+      const active = document.activeElement
+      if (e.shiftKey && (active === first || active === panel.current)) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus() }
+    }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+    return () => { window.removeEventListener('keydown', onKey); before?.focus?.() }
+  }, [open])
+  const label = typeof title === 'string' ? title : 'Dialog'
   if (!open) return null
   // Portal to the phone frame so sheets cover the whole screen (incl. nav),
   // not just the scrolling page they were opened from.
   const root = document.getElementById('sheet-root')
-  const sheet = (
-    <div className="absolute inset-0 z-40 flex flex-col justify-end" role="dialog" aria-modal="true">
+  const sheet = web ? (
+    <div className="fixed inset-0 z-40 grid place-items-center p-6" role="dialog" aria-modal="true" aria-label={label}>
+      <div className="absolute inset-0 bg-ink/45 backdrop-blur-[2px] animate-fade" onClick={onClose} />
+      <div ref={panel} tabIndex={-1} className={`outline-none relative w-full max-w-[560px] bg-paper rounded-3xl shadow-lift animate-rise flex flex-col ${tall ? 'h-[min(760px,92vh)]' : 'max-h-[90vh]'}`}>
+        <div className="flex items-start justify-between gap-4 px-7 pt-6 pb-2">
+          <div className="font-display text-xl font-semibold">{title}</div>
+          <button onClick={onClose} className="-mr-2 -mt-1 w-9 h-9 grid place-items-center rounded-full hover:bg-ink/5 text-ink-3" aria-label="Close">
+            <CloseIcon width={18} height={18} />
+          </button>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto px-7 pb-7 pt-2">{children}</div>
+      </div>
+    </div>
+  ) : (
+    <div className="absolute inset-0 z-40 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label={label}>
       <div className="absolute inset-0 bg-ink/45 animate-fade" onClick={onClose} />
-      <div className={`relative bg-paper rounded-t-[28px] animate-sheet flex flex-col ${tall ? 'h-[92%]' : 'max-h-[90%]'}`}>
+      <div ref={panel} tabIndex={-1} className={`outline-none relative bg-paper rounded-t-[28px] animate-sheet flex flex-col ${tall ? 'h-[92%]' : 'max-h-[90%]'}`}>
         <div className="flex items-center justify-between px-5 pt-3 pb-2">
           <div className="w-8" />
           <div className="h-1.5 w-10 rounded-full bg-ink/15" />
@@ -87,8 +119,9 @@ export function Sheet({ open, onClose, children, title, tall = false }: {
 /* ---------------------------- PageHeader ---------------------------- */
 export function PageHeader({ title, back, right }: { title?: ReactNode; back?: boolean | string; right?: ReactNode }) {
   const nav = useNavigate()
+  const { web } = useLayout()
   return (
-    <div className="sticky top-0 z-20 bg-paper px-5 pt-4 pb-3 flex items-center gap-3">
+    <div className={web ? 'pb-4 flex items-center gap-3' : 'sticky top-0 z-20 bg-paper px-5 pt-4 pb-3 flex items-center gap-3'}>
       {back && (
         <button
           onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))}

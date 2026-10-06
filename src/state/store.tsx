@@ -12,6 +12,8 @@ export interface AppState {
   xpLog: XpEvent[]
   completedLessons: string[]
   movedThisMonth: boolean
+  /** When on, the next month's move runs by itself on "the 1st" (simulated). */
+  autopilot: boolean
   /** Health score when onboarding finished, so we can show "+N since you started". */
   startHealth: number | null
   rewarded: string[]
@@ -22,8 +24,12 @@ export type Action =
   | { type: 'COMPLETE_ONBOARDING'; user: User }
   | { type: 'SET_PLAN'; goalId: string; plan: PlanId; months: number }
   | { type: 'MAKE_MOVE' }
+  | { type: 'NEXT_MONTH' }
+  | { type: 'TOGGLE_AUTOPILOT' }
   | { type: 'ADD_TO_GOAL'; amount: number; label: string }
   | { type: 'ADD_GOAL'; goal: Goal; activate?: boolean }
+  | { type: 'APPLY_SPLIT'; toGoal: number; toBuffer: number; label: string }
+  | { type: 'START_EMI'; item: string; monthly: number; months: number }
   | { type: 'SET_ACTIVE_GOAL'; goalId: string }
   | { type: 'START_BUFFER'; monthly: number }
   | { type: 'COMPLETE_LESSON'; id: string; title: string }
@@ -42,6 +48,7 @@ const initialState = (): AppState => ({
   xpLog: demoXpLog(),
   completedLessons: [],
   movedThisMonth: false,
+  autopilot: false,
   startHealth: null,
   rewarded: [],
   toast: null,
@@ -85,7 +92,9 @@ function reducer(s: AppState, a: Action): AppState {
       if (s.movedThisMonth) return s
       const move = monthlyMove(s.user)
       // One simulated month passes: money lands in goals and the countdown ticks.
-      const user = mapGoals({ ...s.user, monthsElapsed: (s.user.monthsElapsed ?? 0) + 1 }, (g) => {
+      const emiLeft = s.user.emi ? s.user.emi.monthsLeft - 1 : 0
+      const emi = s.user.emi && emiLeft > 0 ? { ...s.user.emi, monthsLeft: emiLeft } : undefined
+      const user = mapGoals({ ...s.user, monthsElapsed: (s.user.monthsElapsed ?? 0) + 1, emi }, (g) => {
         if (g.id === s.user.activeGoalId)
           return { ...g, currentAmount: Math.min(g.targetAmount, g.currentAmount + move.toGoal), targetMonths: Math.max(1, g.targetMonths - 1) }
         if (g.kind === 'buffer') return { ...g, currentAmount: Math.min(g.targetAmount, g.currentAmount + move.toBuffer) }
@@ -97,11 +106,53 @@ function reducer(s: AppState, a: Action): AppState {
       return { ...next, toast: { id: ++toastSeq, text: "This month's move is done", xp: move.toInvest > 0 ? 90 : 40 } }
     }
 
+    case 'NEXT_MONTH': {
+      // Demo clock: the 1st rolls round. With autopilot on, the move runs by itself.
+      if (!s.movedThisMonth) return s
+      const fresh: AppState = { ...s, movedThisMonth: false }
+      if (!s.autopilot) return { ...fresh, toast: { id: ++toastSeq, text: 'A new month begins. Time for your move.' } }
+      const moved = reducer(fresh, { type: 'MAKE_MOVE' })
+      return { ...moved, toast: { id: ++toastSeq, text: 'Autopilot made this month\'s move', xp: 90 } }
+    }
+
+    case 'TOGGLE_AUTOPILOT':
+      return { ...s, autopilot: !s.autopilot, toast: { id: ++toastSeq, text: s.autopilot ? 'Autopilot off' : 'Autopilot on. Your move runs on the 1st.' } }
+
     case 'ADD_TO_GOAL': {
       const user = mapGoals(s.user, (g) =>
         g.id === s.user.activeGoalId ? { ...g, currentAmount: Math.min(g.targetAmount, g.currentAmount + a.amount) } : g,
       )
       return award({ ...s, user }, 30, a.label)
+    }
+
+    case 'APPLY_SPLIT': {
+      // The agent's split lands in the goal and (if it's in the plan) the emergency buffer.
+      let user = mapGoals(s.user, (g) =>
+        g.id === s.user.activeGoalId ? { ...g, currentAmount: Math.min(g.targetAmount, g.currentAmount + a.toGoal) } : g,
+      )
+      if (a.toBuffer > 0) {
+        if (user.goals.some((g) => g.kind === 'buffer')) {
+          user = mapGoals(user, (g) => (g.kind === 'buffer' ? { ...g, currentAmount: Math.min(g.targetAmount, g.currentAmount + a.toBuffer) } : g))
+        } else {
+          const buffer: Goal = {
+            id: 'buffer', kind: 'buffer', name: 'Emergency buffer', emoji: '🛟',
+            targetAmount: 5000, currentAmount: Math.min(5000, a.toBuffer), targetMonths: Math.ceil(5000 / 1000),
+            monthlyContribution: 1000, plan: 'save',
+          }
+          user = { ...user, goals: [...user.goals, buffer] }
+        }
+      }
+      return award({ ...s, user }, 30, a.label)
+    }
+
+    case 'START_EMI': {
+      const user = { ...s.user, emi: { item: a.item, monthly: a.monthly, monthsLeft: a.months } }
+      const before = computeHealth(s.user).total
+      const delta = computeHealth(user).total - before
+      return {
+        ...s, user,
+        toast: { id: ++toastSeq, text: delta < 0 ? `${a.item} EMI added · Money Health ${delta}` : `${a.item} EMI added` },
+      }
     }
 
     case 'ADD_GOAL': {

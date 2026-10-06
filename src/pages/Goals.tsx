@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../state/store'
+import { useLayout } from '../lib/layout'
 import { GOAL_TEMPLATES, goalFromTemplate, type GoalTemplate } from '../data/demo'
 import { inr } from '../lib/format'
 import { GoalCard } from '../components/Cards'
@@ -9,6 +10,7 @@ import { Button, Pill, SectionTitle, Sheet } from '../components/ui'
 export default function Goals() {
   const { state, dispatch } = useApp()
   const nav = useNavigate()
+  const { web } = useLayout()
   const { goals, activeGoalId } = state.user
   const focus = goals.find((g) => g.id === activeGoalId)
   const others = goals.filter((g) => g.id !== activeGoalId)
@@ -26,28 +28,36 @@ export default function Goals() {
   }
 
   return (
-    <div className="px-5 pt-5">
-      <h1 className="font-display text-[30px] font-semibold tracking-tight">Goals</h1>
+    <div className={web ? "" : "px-5 pt-5"}>
+      <h1 className={`font-display font-semibold tracking-tight ${web ? "text-[40px]" : "text-[30px]"}`}>Goals</h1>
       <p className="text-ink-3 mt-1">One focus at a time. Focus is how things actually happen.</p>
+
+      {!focus && others.length === 0 && (
+        <div className="card p-6 mt-6 text-center">
+          <div className="text-4xl">🎯</div>
+          <div className="font-display text-lg font-semibold mt-2">No goals yet</div>
+          <p className="text-[14px] text-ink-3 mt-1">Pick something you want below. We'll turn it into a monthly number.</p>
+        </div>
+      )}
 
       {focus && (
         <>
           <div className="mt-6 mb-2 flex items-center gap-2"><Pill tone="mint">Focus goal</Pill></div>
-          <GoalCard goal={focus} />
+          <div className={web ? "md:max-w-[calc(50%-8px)] xl:max-w-[calc(33.333%-11px)]" : ""}><GoalCard goal={focus} /></div>
         </>
       )}
 
       {others.length > 0 && (
         <>
           <SectionTitle>Also building</SectionTitle>
-          <div className="space-y-3">{others.map((g) => <GoalCard key={g.id} goal={g} compact />)}</div>
+          <div className={web ? "grid gap-4 md:grid-cols-2 xl:grid-cols-3" : "space-y-3"}>{others.map((g) => <GoalCard key={g.id} goal={g} compact />)}</div>
         </>
       )}
 
       <SectionTitle>Add a goal</SectionTitle>
-      <div className="grid grid-cols-4 gap-2">
+      <div className={web ? "grid grid-cols-4 xl:grid-cols-8 gap-3" : "grid grid-cols-4 gap-2"}>
         {GOAL_TEMPLATES.map((t) => (
-          <button key={t.kind} onClick={() => open(t)} className="rounded-2xl bg-paper-card border border-paper-line py-3 px-1 text-center hover:shadow-card transition">
+          <button key={t.kind} onClick={() => open(t)} className="rounded-2xl bg-paper-card border border-paper-line py-3 px-1 text-center hover:shadow-card hover:-translate-y-0.5 transition">
             <div className="text-2xl">{t.emoji}</div>
             <div className="text-[11px] font-semibold mt-1.5 leading-tight text-ink-2">{t.name}</div>
           </button>

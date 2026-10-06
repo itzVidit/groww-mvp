@@ -26,13 +26,26 @@ npm run build     # static site in dist/
 
 1. Pick 🎮 PS5 → tap through 4 short questions (pre-filled with Vidit's data).
 2. **Dream → Money**: compare SAVE / SAVE + INVEST / WAIT LONGER → lock a plan.
-3. **Home**: Money Health, goal progress → *Make this month's move*.
-4. **Ask Agent**: "I have ₹5,000 left this month" → *Use this plan* / *Explain why*.
-   Try "Should I buy this iPhone on EMI?" → *Show me both options*.
-5. **Invest** → 🔥 Trending VoltEdge → **FOMO Check**.
-6. **Money** → 79/100 → one priority: *Build ₹5,000 buffer*.
+3. **Home**: *Where your ₹35,000 goes* (essentials + the monthly move) → *Make this month's move*.
+4. **Ask Agent**: "I have ₹5,000 left this month" → a split that follows your locked plan → *Use this plan*.
+5. **Can I afford it?** Ask "Can I afford an iPhone?" → *Show me the options* → *See the full comparison*: Buy now (EMI) vs Build first vs Invest + wait.
+6. **Invest** → 🔥 Trending VoltEdge → **FOMO Shield** → pick an amount → HIGH → goal impact → *Sleep on it*.
+7. **Money** → score moved → one priority: *Build ₹5,000 buffer*.
 
 "Restart demo" (Money tab or desktop sidebar) resets everything.
+
+## Also in the app
+
+- **What if I save…** slider on the planner, plus a "How we calculated this" panel (0% returns, no hidden maths).
+- **Autopilot + Next moves:** switch it on, then *Skip to next month (demo)* and the move runs by itself. A celebration shows the bar fill after each move.
+- **FOMO Shield** works on three hypothetical assets (viral stock, meme token, steady gold ETF).
+- **Past returns, side by side** on Invest (and via the agent: "what are nifty returns?"): Nifty 50, flexi-cap, aggressive hybrid, REITs, FDs and liquid funds on one scale, with risk and a dated source. Data lives in `src/data/returns.ts`; refresh it before you present.
+- **Agent** shows what each reply was based on ("Based on: your PS5 plan · free money ₹8,000 · …").
+- **Installable / offline:** manifest, icons and a service worker (production build). Focus traps in sheets, 44px touch targets, AA-contrast text, and an error screen with a one-tap reset.
+
+## Integrating with Groww
+
+See [docs/INTEGRATION.md](docs/INTEGRATION.md): mount `<DreamsApp host={...} />`; layout via `?type=windows` or `?type=mobile`.
 
 ## Change the demo user
 

@@ -2,43 +2,44 @@
 
 ## The problem
 
-Investing apps start from the product: SIPs, mutual funds, stocks, CAGR, risk profiles. A 22-year-old on their first salary doesn't think in those terms. They think *"I want a PS5," "I want to go to Goa," "I want to stop worrying about money."* Every investing app makes them translate a want into finance jargon before anything useful happens. Most stop there, or skip planning entirely and buy whatever Instagram says is going up.
+Investing apps start from the product: SIPs, funds, stocks, CAGR. A 22-year-old on their first salary thinks *"I want a PS5," "I want to go to Goa."* Every app makes them translate a want into jargon first. Most stop there, or buy whatever Instagram says is going up.
 
-The real tension isn't irresponsibility. It's this: **"I want to enjoy my life today *and* be financially secure tomorrow."** Today's apps make that feel like a choice. Shopping apps serve the first half with EMIs; investing apps serve the second with dashboards. Nobody connects them.
+The real tension isn't irresponsibility: **"I want to enjoy my life today *and* be financially secure tomorrow."** Shopping apps serve the first half with EMIs; investing apps serve the second with dashboards. Nobody connects them.
 
 ## Who it's for
 
-Indian first-time investors aged 20–26: students, part-timers and first-jobbers. They're exposed to finfluencers, have some FOMO, use EMIs, and have little patience for financial education. They still want long-term independence.
+Indian first-time investors aged 20–26: students, part-timers, first-jobbers. They see finfluencers, use EMIs, and have little patience for financial education.
 
 ## The solution
 
-Groww Dreams reverses the funnel:
+Groww Dreams reverses the funnel: **Aspiration → Goal → Plan → Money action → Progress → Wealth.** Three pillars carry it, and the agent is the front door to all of them.
 
-> **Aspiration → Goal → Plan → Money action → Progress → Wealth**
+1. **Dream → Money Autopilot (the hero).** The app shows what a goal costs ("2.9 months of your free money") and three plans: **Save** (fastest, trims investing), **Save + Invest** (a little later, investing intact), **Wait longer** (lowest monthly). Each shows date, split bar, trade-off and Money Health impact. Lock one and Home shows **where your whole ₹35,000 goes**: essentials, goal, investing, flexible spending. Goal money is assumed to earn nothing, so no plan relies on returns.
+2. **Can I afford it?** Price, EMI months, and three columns: **Buy now (EMI)**, **Build first**, **Invest + wait**. Each shows monthly cash flow, goal date, investing, emergency buffer and EMI as a share of free money. Choosing the EMI lowers the Credit pillar and appears in the monthly move, so the choice has visible consequences.
+3. **FOMO Shield.** Before buying a trending stock, the user picks an amount and answers "why are you buying this?". They get a FOMO Risk with reasons and what the amount costs their goal ("₹5,000 ≈ 1.3 months of your PS5 plan"). Nothing is blocked, and pausing earns XP.
 
-1. **Start with the want.** Onboarding opens with *"What are you building toward?"*: iPhone, PS5, Travel, Bike, First ₹1 Lakh, Financial Freedom. Then five conversational questions, with no risk questionnaire.
-2. **Dream → Money (the hero).** The app shows what the goal really costs ("2.9 months of your free money") and three ways to reach it. **Save** is fastest but trims investing. **Save + Invest** is a bit later and keeps investing intact. **Wait longer** has the lowest monthly amount. Each option shows the date, the monthly amount, a split bar of where the money goes, the trade-off in plain words, and how it changes Money Health. Goal money is assumed to earn nothing, so we never rely on returns to make a plan work.
-3. **This month's move.** Home turns the plan into one action: ₹3,920 → PS5, ₹3,000 → long-term investing, ₹1,080 → flexible spending. One tap, and progress updates.
-4. **Money Agent.** A coach that knows your numbers. "I have ₹5,000 left" gets a balanced split with one-tap apply. "iPhone on EMI?" gets an honest comparison: the EMI eats 83% of your free money, while saving after the PS5 lands it by a specific month with no interest. It never picks stocks or promises returns.
-5. **FOMO Check.** Before buying a trending stock, the user answers a 20-second "why are you buying this?" and gets a FOMO Risk with reasons. *"This doesn't mean you shouldn't invest. It means you should understand why."* Nothing is ever blocked, and pausing earns XP.
-6. **Money Health.** One score built from five habits (saving, investing, credit, emergency buffer, goals) and **one** priority with **one** action ("Build ₹5,000 buffer"), which flows straight back into the monthly move.
+**Money Health** is the scoreboard: five habits, **one** priority, **one** action. **Money Agent** answers in plain language using the same numbers: "I have ₹5,000 left" splits by your locked plan (buffer, then goal, then investing), and "Can I afford an iPhone?" opens pillar two. It never picks stocks or promises returns.
 
-Gamification rewards behaviour, not trading: a money streak, plus XP for saving, investing monthly, finishing a 45-second Money Minute, staying on plan, and pausing on impulse buys. There is never XP for trades or risk-taking.
+Gamification rewards behaviour, not trading: streaks, XP for saving, investing monthly, finishing a 45-second Money Minute and pausing on impulse buys.
 
 ## Why this is more than "Groww with a Gen-Z skin"
 
-- **Wants are legitimate.** The app never shames a PS5. It shows the cost and a path, and protects long-term investing while you get there.
-- **The trade-offs are visible.** Every choice shows what you gain and what you give up.
-- **Protection without paternalism.** FOMO Check and the EMI comparison add friction where impulse decisions happen, then step aside.
-- **Every screen ends in an action**, not a chart.
+- **Wants are legitimate.** It shows the cost and a path, and protects long-term investing meanwhile.
+- **Trade-offs are visible.** Every choice shows what you gain and give up.
+- **Protection without paternalism.** FOMO Shield and Can I afford it? add friction where impulse decisions happen, then step aside.
+- **Complementary to Groww's AI.** GR-1 does portfolio and research. This is cash-flow and goal coaching: what to do with this month's money.
+
+## Honest about the crowd
+
+"Every rupee has a job" is YNAB's idea, and goal-based investing, round-ups and AI assistants all exist in India. The edge is the combination at the moment of decision, especially pre-trade friction, which we found no major app shipping (absence of evidence, not proof).
 
 ## What we deliberately didn't build
 
-Real trading, KYC, bank or credit integrations, an LLM backend, a screener, social features or leaderboards. All of it can be mocked convincingly, and none of it makes the core loop (want → plan → action → progress) stronger for a first version.
+Real trading, KYC, bank or credit integrations, an LLM backend, social features. The agent is **rule-based by design**, so every reply can be evaluated. Credit is a labelled sample profile, except for EMIs the user confirms.
 
 ## Next, if this were real
 
-- Connect Account Aggregator data so "free money" is measured, not self-reported.
-- Route goal money to a liquid fund or FD and long-term money to an index-fund SIP in one flow.
-- Swap the rule-based agent for an LLM with the same guardrails, and use the existing evals as its regression suite.
-- Measure: plan lock rate, month-2 move retention, FOMO-check pause rate, and buffer adoption.
+- Account Aggregator data, so free money is measured, not self-reported.
+- Route goal money to a liquid fund and long-term money to an index SIP in one flow.
+- Swap in an LLM (the GR-1 path) with the same guardrails, using the evals as its regression suite.
+- Measure plan lock rate, month-2 retention, FOMO pause rate and buffer adoption.

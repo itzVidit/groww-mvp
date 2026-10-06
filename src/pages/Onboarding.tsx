@@ -4,13 +4,22 @@ import { useApp } from '../state/store'
 import { DEMO_GOAL, DEMO_USER, GOAL_TEMPLATES, goalFromTemplate, templateFor } from '../data/demo'
 import type { Experience, Risk, User } from '../types'
 import { Button } from '../components/ui'
+import { Logo } from '../components/Layout'
+import { useLayout } from '../lib/layout'
 import { BackIcon } from '../components/Icons'
 
 const STEPS = 5
 
+const PERKS = [
+  { emoji: "🎯", title: "Goal-first plans", sub: "Pick a PS5, a trip or a bike. See the monthly math." },
+  { emoji: "🛡️", title: "FOMO Shield", sub: "Pause before the hype trade. Earn XP for it." },
+  { emoji: "💬", title: "A coach, not a tipster", sub: "Ask the Money Agent anything, in plain words." },
+]
+
 export default function Onboarding() {
   const { dispatch } = useApp()
   const nav = useNavigate()
+  const { web } = useLayout()
   const [step, setStep] = useState(0)
   const [building, setBuilding] = useState(false)
 
@@ -75,7 +84,7 @@ export default function Onboarding() {
   const next = () => (step < STEPS - 1 ? setStep(step + 1) : finish())
   const emoji = templateFor(kind).emoji
 
-  return (
+  const flow = (
     <div className="flex flex-col flex-1 min-h-full">
       {/* Top bar */}
       <div className="px-5 pt-5 flex items-center gap-3 h-14">
@@ -189,6 +198,31 @@ export default function Onboarding() {
             </Button>
           </div>
         )}
+      </div>
+    </div>
+  )
+
+  if (!web) return flow
+  return (
+    <div className="shrink-0 min-h-full grid lg:grid-cols-[5fr_6fr]">
+      <aside className="hidden lg:flex flex-col justify-between bg-ink text-white p-12 xl:p-16 lg:sticky lg:top-0 lg:h-[100dvh] self-start">
+        <Logo />
+        <div>
+          <h1 className="font-display text-[48px] leading-[1.02] font-semibold tracking-tight">Turn what you want today into wealth for tomorrow.</h1>
+          <p className="mt-5 text-white/60 text-[17px] leading-relaxed max-w-[460px]">Start from the thing you want. We will show you exactly what your money needs to do, and keep you honest along the way.</p>
+          <ul className="mt-10 space-y-4">
+            {PERKS.map((p) => (
+              <li key={p.title} className="flex gap-4 items-start">
+                <span className="w-10 h-10 shrink-0 rounded-xl bg-white/10 grid place-items-center text-lg">{p.emoji}</span>
+                <div><div className="font-semibold">{p.title}</div><div className="text-[14px] text-white/50 mt-0.5">{p.sub}</div></div>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="text-[11.5px] text-white/35 leading-relaxed max-w-[460px]">Product concept. All data is mock and stored only in this browser. Not affiliated with or endorsed by Groww. Not investment advice.</p>
+      </aside>
+      <div className="flex flex-col min-h-full">
+        <div className="w-full max-w-[520px] mx-auto flex-1 flex flex-col px-2 lg:py-6">{flow}</div>
       </div>
     </div>
   )

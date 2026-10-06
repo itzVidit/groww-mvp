@@ -1,5 +1,6 @@
 import type { FinancialHealth, User } from '../types.ts'
 import { clamp, pct } from './format.ts'
+import { emiShareOf } from './afford.ts'
 import { activePlan, remainingFor } from './plan.ts'
 
 export type PillarKey = 'savingScore' | 'investingScore' | 'creditScore' | 'emergencyScore' | 'goalScore'
@@ -30,7 +31,9 @@ export function computeHealth(user: User): FinancialHealth {
 
   const savingScore = clamp(Math.round(40 + (user.monthlyAvailable / user.income) * 183))
   const investingScore = clamp(Math.round(45 + (invest / user.income) * 300))
-  const creditScore = clamp(Math.round(100 - user.creditUtilization * 70))
+  // A confirmed EMI counts against credit: the bigger its share of free money, the bigger the hit.
+  const emiHit = user.emi ? Math.round(emiShareOf(user.emi.monthly, user.monthlyAvailable) * 0.4) : 0
+  const creditScore = clamp(Math.round(100 - user.creditUtilization * 70 - emiHit))
   const emergencyScore = clamp(Math.round(28 + bufferMonths(user) * 23))
 
   let goalScore = 40
@@ -110,7 +113,10 @@ export const PILLAR_HINT: Record<PillarKey, (u: User) => string> = {
       ? `Your goal plan trims investing to ₹${p.toInvest.toLocaleString('en-IN')}/month.`
       : 'You invest every month. Consistency beats timing.'
   },
-  creditScore: (u) => `Sample profile: ${Math.round(u.creditUtilization * 100)}% of card limit used, no missed payments.`,
+  creditScore: (u) =>
+    u.emi
+      ? `Your ${u.emi.item} EMI (₹${u.emi.monthly.toLocaleString('en-IN')}/mo, ${u.emi.monthsLeft} left) takes ${emiShareOf(u.emi.monthly, u.monthlyAvailable)}% of your free money. The rest is a sample profile.`
+      : `Sample profile: ${Math.round(u.creditUtilization * 100)}% of card limit used, no missed payments.`,
   emergencyScore: (u) => `Covers ~${bufferMonths(u).toFixed(1)} months of essentials. 3 months is a good target.`,
   goalScore: (u) => {
     const g = u.goals.find((x) => x.id === u.activeGoalId)

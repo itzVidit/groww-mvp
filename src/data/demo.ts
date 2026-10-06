@@ -75,3 +75,11 @@ export const demoXpLog = (): XpEvent[] => [
   { id: 'h2', label: 'Stayed within goal budget', xp: 40, at: Date.now() - 6 * day },
   { id: 'h1', label: 'Invested last month', xp: 50, at: Date.now() - 9 * day },
 ]
+
+/** A goal for something the user wants to buy next ("Can I afford it?" / the agent). */
+export function goalForItem(item: string, price: number): Goal {
+  const key = item.toLowerCase()
+  const t = templateFor(key === 'iphone' ? 'iphone' : key === 'bike' ? 'bike' : 'custom')
+  const name = item === 'this' || !item.trim() ? 'Next purchase' : item.replace(/^\w/, (c) => c.toUpperCase())
+  return goalFromTemplate(t, { name, targetAmount: price })
+}
