@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body {
+  @apply bg-[#E9ECE6] text-ink font-sans antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+.num { font-variant-numeric: tabular-nums; }
+.card { @apply bg-paper-card rounded-3xl shadow-card border border-paper-line/70; }
+.label { @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+.pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 1.25rem); }
+input[type=range] { accent-color: #00B386; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
