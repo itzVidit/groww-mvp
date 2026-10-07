@@ -1,3 +1,5 @@
+import { RewardsChip } from '../components/RewardsBar'
+import { tierFor } from '../lib/rewards'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp, useDerived } from '../state/store'
@@ -92,7 +94,7 @@ export default function Money() {
           <div><div className="font-display font-semibold text-lg leading-none">{state.streak} days</div><div className="text-[11px] text-ink-3 mt-1">Money streak</div></div>
         </div>
         <div className="w-px h-9 bg-paper-line" />
-        <div><div className="font-display font-semibold text-lg leading-none num">{state.xp}</div><div className="text-[11px] text-ink-3 mt-1">XP earned</div></div>
+        <div><div className="font-display font-semibold text-lg leading-none num">{state.xp}</div><div className="text-[11px] text-ink-3 mt-1">XP · {tierFor(state.xp).tier.name}</div></div>
         <span className="ml-auto text-[12px] font-semibold text-ink-3 group-open:hidden">Show</span>
       </summary>
       <ul className="mt-4 space-y-2.5">
@@ -103,6 +105,7 @@ export default function Money() {
           </li>
         ))}
       </ul>
+      <div className="mt-4"><RewardsChip /></div>
       <p className="text-[11.5px] text-ink-3 mt-4 pt-3 border-t border-paper-line">
         XP rewards saving, learning, consistency and pausing before impulse buys. Never trading.
       </p>

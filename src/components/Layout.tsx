@@ -3,7 +3,8 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../state/store'
 import { useLayout } from '../lib/layout'
 import { useDerived } from '../state/store'
-import { FlameIcon, GoalIcon, HomeIcon, InvestIcon, MoneyIcon, SparkIcon } from './Icons'
+import { RewardsChip } from './RewardsBar'
+import { GoalIcon, HomeIcon, InvestIcon, MoneyIcon, SparkIcon } from './Icons'
 import { Toast } from './Toast'
 
 const TABS = [
@@ -223,10 +224,7 @@ function TopNav() {
         </button>
 
         <div className="ml-auto md:ml-0 flex shrink-0 items-center gap-2 whitespace-nowrap">
-          <span className="hidden 2xl:inline-flex items-center gap-1 rounded-full bg-amber-soft text-[#9A6412] px-2.5 h-8 text-[13px] font-bold">
-            <FlameIcon width={15} height={15} /> {state.streak}
-          </span>
-          <span className="hidden 2xl:inline-flex items-center rounded-full bg-ink text-white px-2.5 h-8 text-[13px] font-bold num">{state.xp} XP</span>
+          <RewardsChip className="hidden sm:inline-flex" />
           <div className="relative">
             <button
               onClick={() => setGuide((g) => !g)}

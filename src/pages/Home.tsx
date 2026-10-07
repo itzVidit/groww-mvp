@@ -4,11 +4,12 @@ import { useApp, useDerived } from '../state/store'
 import { useLayout } from '../lib/layout'
 import { healthLabel, topPriority } from '../lib/health'
 import { GoalCard, MoneyActionCard, UpcomingMoves } from '../components/Cards'
+import { RewardsChip } from '../components/RewardsBar'
 import { MoneyMinuteRow } from '../components/MoneyMinute'
 import { AffordSheet } from '../components/AffordIt'
 import { ScoreRing } from '../components/ScoreRing'
 import { SectionTitle } from '../components/ui'
-import { ChevronIcon, FlameIcon, SparkIcon } from '../components/Icons'
+import { ChevronIcon, SparkIcon } from '../components/Icons'
 import { SUGGESTED_PROMPTS } from '../lib/agent'
 
 export default function Home() {
@@ -97,8 +98,7 @@ export default function Home() {
             <h1 className="font-display text-[40px] leading-[1.05] font-semibold tracking-tight mt-1">Your money, moving somewhere.</h1>
           </div>
           <div className="flex items-center gap-2 xl:hidden">
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-soft text-[#9A6412] px-3 h-9 text-[13px] font-bold"><FlameIcon width={15} height={15} /> {state.streak}-day streak</span>
-            <span className="inline-flex items-center rounded-full bg-ink text-white px-3 h-9 text-[13px] font-bold num">{state.xp} XP</span>
+            <RewardsChip />
           </div>
         </div>
 
@@ -128,10 +128,7 @@ export default function Home() {
       <div className="flex items-center justify-between">
         <div className="text-ink-2 font-medium">Hey {user.name} 👋</div>
         <div className="flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-soft text-[#9A6412] px-2.5 h-8 text-[13px] font-bold">
-            <FlameIcon width={15} height={15} /> {state.streak}-day streak
-          </span>
-          <span className="inline-flex items-center rounded-full bg-ink text-white px-2.5 h-8 text-[13px] font-bold num">{state.xp} XP</span>
+          <RewardsChip />
         </div>
       </div>
       <h1 className="font-display text-[30px] leading-[1.08] font-semibold tracking-tight mt-4">

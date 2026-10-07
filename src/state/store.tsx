@@ -17,6 +17,8 @@ export interface AppState {
   /** Health score when onboarding finished, so we can show "+N since you started". */
   startHealth: number | null
   rewarded: string[]
+  /** Streak rewards the user has claimed (ids from lib/rewards). */
+  claimed: string[]
   toast: { id: number; text: string; xp?: number } | null
 }
 
@@ -34,6 +36,7 @@ export type Action =
   | { type: 'START_BUFFER'; monthly: number }
   | { type: 'COMPLETE_LESSON'; id: string; title: string }
   | { type: 'REWARD_ONCE'; key: string; xp: number; label: string }
+  | { type: 'CLAIM_REWARD'; id: string; title: string }
   | { type: 'TOAST'; text: string }
   | { type: 'CLEAR_TOAST' }
   | { type: 'RESET' }
@@ -51,6 +54,7 @@ const initialState = (): AppState => ({
   autopilot: false,
   startHealth: null,
   rewarded: [],
+  claimed: [],
   toast: null,
 })
 
@@ -180,6 +184,10 @@ function reducer(s: AppState, a: Action): AppState {
     case 'REWARD_ONCE':
       if (s.rewarded.includes(a.key)) return s
       return award({ ...s, rewarded: [...s.rewarded, a.key] }, a.xp, a.label)
+
+    case 'CLAIM_REWARD':
+      if (s.claimed.includes(a.id)) return s
+      return { ...s, claimed: [...s.claimed, a.id], toast: { id: ++toastSeq, text: `Reward added to your wallet: ${a.title}` } }
 
     case 'TOAST':
       return { ...s, toast: { id: ++toastSeq, text: a.text } }
